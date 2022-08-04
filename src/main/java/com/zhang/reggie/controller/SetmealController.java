@@ -13,6 +13,8 @@ import com.zhang.reggie.service.SetmealService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -38,6 +40,7 @@ public class SetmealController {
      * @return
      */
     @PostMapping
+    @CacheEvict(value = "setmealCache", allEntries = true)
     public R<String> save(@RequestBody SetmealDto setmealDto){
         log.info("新增套餐 ---> {}",setmealDto.toString());
         setmealService.saveWithDish(setmealDto);
@@ -96,12 +99,13 @@ public class SetmealController {
      * @param ids
      * @return
      */
-//    @DeleteMapping
-//    public R<String> delete(@RequestParam List<Long> ids){
-//        log.info("需要删除的套餐id --> {}",ids);
-//        setmealService.removeWithDish(ids);
-//        return R.success("删除套餐成功！");
-//    }
+    @DeleteMapping
+    @CacheEvict(value = "setmealCache", allEntries = true)
+    public R<String> delete(@RequestParam List<Long> ids){
+        log.info("需要删除的套餐id --> {}",ids);
+        setmealService.removeWithDish(ids);
+        return R.success("删除套餐成功！");
+    }
 
     /**
      * 根据条件查询套餐分类
@@ -109,6 +113,7 @@ public class SetmealController {
      * @return
      */
     @GetMapping("/list")
+    @Cacheable(value = "setmealCache", key = "#setmeal.categoryId + '_' + #setmeal.status")
     public R<List<Setmeal>> list(Setmeal setmeal){
         LambdaQueryWrapper<Setmeal> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(setmeal.getCategoryId() != null,Setmeal::getCategoryId,setmeal.getCategoryId());
@@ -139,22 +144,22 @@ public class SetmealController {
      * @param ids
      * @return
      */
-    @DeleteMapping
-    public R<String> delete(String[] ids){
-        Integer index = 0;
-        for(String id:ids) {
-            Setmeal setmeal = setmealService.getById(id);
-            if(setmeal.getStatus() != 1){
-                setmealService.removeById(id);
-            }else {
-                index++;
-            }
-        }
-        if (index > 0 && index == ids.length){
-            return R.error("选中的套餐均为启售状态，不能删除！");
-        }else {
-            return R.success("删除成功！");
-        }
-    }
+//    @DeleteMapping
+//    public R<String> delete(String[] ids){
+//        Integer index = 0;
+//        for(String id:ids) {
+//            Setmeal setmeal = setmealService.getById(id);
+//            if(setmeal.getStatus() != 1){
+//                setmealService.removeById(id);
+//            }else {
+//                index++;
+//            }
+//        }
+//        if (index > 0 && index == ids.length){
+//            return R.error("选中的套餐均为启售状态，不能删除！");
+//        }else {
+//            return R.success("删除成功！");
+//        }
+//    }
 }
 
